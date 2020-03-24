@@ -1,0 +1,27 @@
+sudo: required
+services:
+  - docker
+
+# Tests
+before_install:
+  - docker build -t golenski/client-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true golenski/client-test npm test
+
+# Build prod images
+after_success:
+  - docker build -t golenski/multi-container-app-client ./client
+  - docker build -t golenski/multi-container-app-nginx ./nginx
+  - docker build -t golenski/multi-container-app-server ./server
+  - docker build -t golenski/multi-container-app-worker ./worker
+
+  # Log in to docker CLI
+  - echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_ID" --password-stdin
+
+  #Push images to docker hub
+  - docker push golenski/multi-container-app-client
+  - docker push golenski/multi-container-app-nginx
+  - docker push golenski/multi-container-app-server
+  - docker push golenski/multi-container-app-worker
+
